@@ -1,11 +1,5 @@
 # window.r -- helper functions
 
-# TODO delete
-dmel_lens <- tibble::tibble(chrom=c("2L", "X", "3L", "4", "2R", "3R"),
-                            length = c(23011544L, 22422827L, 24543557L, 
-                                       1351857L, 21146708L, 27905053L))
-
-
 sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   chroms_i <- sample(seq_along(chrom_lengths$chrom), n, replace=TRUE)  
   chrom <- chrom_lengths$chrom[chroms_i]
@@ -123,6 +117,7 @@ separate_window <- function(.data, remove=TRUE) {
   return(out)
 }
 
+#' @export
 append_wcenter <- function(.data, remove=TRUE) {
   dplyr::mutate(.data, wcenter=(wstart+wend)/2)
 }
@@ -155,10 +150,9 @@ unite_window <- function(.data, remove=TRUE) {
   return(out)
 }
 
+#' @export
 append_wcumpos <- function(.data) {
-  if (!('wcenter' %in% colnames(.data)))
-    .data <- .data %>% append_wcenter()
-  arrange(.data, 'chrom', 'win_start') %>% mutate(wcumpos=cumsum(wcenter))
+  append_wcenter(.data) %>% mutate(wcumpos=cumsum(wcenter))
 }
 
 

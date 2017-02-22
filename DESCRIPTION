@@ -8,3 +8,4 @@ Imports: dplyr, purrr, tidyr, GenomicRanges
 License: BSD
 Encoding: UTF-8
 LazyData: true
+RoxygenNote: 6.0.1

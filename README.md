@@ -127,7 +127,7 @@ dr <- d %>% create_windows(1e6) %>% arrange(chrom) %>%
             group_by(chrom, window) %>% summarize(xmean=mean(x)) %>%
             ungroup() %>%
             separate_window() %>% 
-            append_wcenter() %>% mutate(wcumpos=cumsum(wcenter))
+            append_wcumpos()
 ggplot(dr) + geom_point(aes(x=wcumpos, y=xmean, color=chrom)) 
 ``` 
 
