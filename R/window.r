@@ -111,7 +111,7 @@ separate_window <- function(.data, remove=TRUE) {
   out$chrom <- factor(windows$chrom[i], levels=levels(windows$chrom))
   out$wstart <- windows$start[i]
   out$wend <- windows$end[i]
-  added_cols <- c('chrom', 'start', 'end', 'wstart', 'wend')
+  added_cols <- c('chrom', 'wstart', 'wend')
   # reorder columns so chrom, start end first.
   new_cols <- c(added_cols, setdiff(colnames(out), added_cols))
   if (remove)

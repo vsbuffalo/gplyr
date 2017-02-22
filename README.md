@@ -85,25 +85,50 @@ and then summarize
 
 ```{R}
 > library(tidyr)
-> d %>% create_windows(1e6) %>% arrange(chrom) %>% 
+ d %>% create_windows(1e6) %>% arrange(chrom) %>% 
         group_by(chrom, window) %>% summarize(xmean=mean(x))
 Source: local data frame [124 x 3]
 Groups: chrom [?]
 
    chrom             window     xmean
    <chr>             <fctr>     <dbl>
-1     2L        2L:0-958813 0.5068166
-2     2L  2L:958814-1917627 0.4968698
-3     2L 2L:1917628-2876442 0.5111529
-4     2L 2L:2876443-3835256 0.4956974
-5     2L 2L:3835257-4794070 0.5124214
-6     2L 2L:4794071-5752885 0.4825592
-7     2L 2L:5752886-6711699 0.5153311
-8     2L 2L:6711700-7670514 0.5014180
-9     2L 2L:7670515-8629328 0.4714918
-10    2L 2L:8629329-9588142 0.5032267
+1     2L        2L:0-958813 0.5309507
+2     2L  2L:958814-1917627 0.4806969
+3     2L 2L:1917628-2876442 0.4825353
+4     2L 2L:2876443-3835256 0.4910234
+5     2L 2L:3835257-4794070 0.4859087
+6     2L 2L:4794071-5752885 0.4982354
+7     2L 2L:5752886-6711699 0.4731512
+8     2L 2L:6711700-7670514 0.4912176
+9     2L 2L:7670515-8629328 0.5295646
+10    2L 2L:8629329-9588142 0.5113717
 # ... with 114 more rows
->
 ```
+
+**Note: there is some issue with group attributes** (e..g see the `?` above).
+This is a bug that needs to be fixed; `ungroup()` works for now. We can recover
+window boundaries with `separate_window()` and add a window center with
+`append_wcenter()`.
+
+```{R}
+dr <- d %>% create_windows(1e6) %>% arrange(chrom) %>% 
+            group_by(chrom, window) %>% summarize(xmean=mean(x)) %>%
+            ungroup() %>%
+            separate_window() %>% append_wcenter()
+ggplot(dr) + geom_point(aes(x=wcenter, y=xmean)) + facet_wrap(~chrom)
+``` 
+
+Or, if you want all chromosomes concatenated on a single x-axis, use
+`append_wcumpos()`.
+
+
+```{R}
+dr <- d %>% create_windows(1e6) %>% arrange(chrom) %>% 
+            group_by(chrom, window) %>% summarize(xmean=mean(x)) %>%
+            ungroup() %>%
+            separate_window() %>% 
+            append_wcenter() %>% mutate(wcumpos=cumsum(wcenter))
+ggplot(dr) + geom_point(aes(x=wcumpos, y=xmean, color=chrom)) 
+``` 
 
 
