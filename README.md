@@ -1,6 +1,6 @@
 # Experimental dplyr Extensions for Genomic Range Data
 
-These are some **highly experimental** (e.g. beware, things will change)
+These are some **experimental** (e.g. beware, things will change)
 functions that make working with genomic range data held in dataframes (or
 better, [tibbles](https://github.com/tidyverse/tibble)). If you need more more
 elaborate genomic range operations in R, you almost certainly want
@@ -9,6 +9,7 @@ Bioconductor's
 
 
 ```{R}
+set.seed(0)
 dmel_lens <- tibble::tibble(chrom=c("2L", "X", "3L", "4", "2R", "3R"),
                             length = c(23011544L, 22422827L, 24543557L, 
                                        1351857L, 21146708L, 27905053L))
@@ -65,18 +66,18 @@ dataframe:
 ```{R}
 > d %>% create_windows(width=10e3)
 # A tibble: 20,000 × 5
-   chrom start   end       data         window
-   <chr> <dbl> <dbl>      <dbl>         <fctr>
-1     2L  4370  8415 0.30497986      2L:0-9995
-2     2L 19117 28209 0.24789848  2L:9996-19991
-3     2L 22177 27374 0.91571345 2L:19992-29987
-4     2L 24336 29586 0.40156194 2L:19992-29987
-5     2L 31698 40083 0.07644564 2L:29988-39984
-6     2L 38233 43566 0.82448720 2L:29988-39984
-7     2L 39134 43452 0.98660361 2L:29988-39984
-8     2L 60407 60698 0.40600818 2L:59977-69973
-9     2L 63615 64942 0.41598095 2L:59977-69973
-10    2L 80542 80694 0.12093791 2L:79970-89965
+   chrom  start    end          x          window
+   <chr>  <dbl>  <dbl>      <dbl>          <fctr>
+1     2L  12054  14424 0.16426985   2L:9996-19991
+2     2L  25353  34091 0.51285709  2L:19992-29987
+3     2L  28388  31698 0.73325516  2L:19992-29987
+4     2L  34465  44224 0.32336798  2L:29988-39984
+5     2L  35375  39163 0.32927339  2L:29988-39984
+6     2L  47052  51047 0.58059202  2L:39985-49980
+7     2L  72249  73636 0.08094737  2L:69974-79969
+8     2L  88559  95516 0.96380628  2L:79970-89965
+9     2L  99125 102255 0.31359963  2L:89966-99962
+10    2L 101196 108285 0.87439077 2L:99963-109958
 # ... with 19,990 more rows
 ```
  
@@ -85,42 +86,84 @@ and then summarize
 
 ```{R}
 > library(tidyr)
- d %>% create_windows(1e6) %>% arrange(chrom) %>% 
-        group_by(chrom, window) %>% summarize(xmean=mean(x))
-Source: local data frame [124 x 3]
-Groups: chrom [?]
-
-   chrom             window     xmean
-   <chr>             <fctr>     <dbl>
-1     2L        2L:0-958813 0.5309507
-2     2L  2L:958814-1917627 0.4806969
-3     2L 2L:1917628-2876442 0.4825353
-4     2L 2L:2876443-3835256 0.4910234
-5     2L 2L:3835257-4794070 0.4859087
-6     2L 2L:4794071-5752885 0.4982354
-7     2L 2L:5752886-6711699 0.4731512
-8     2L 2L:6711700-7670514 0.4912176
-9     2L 2L:7670515-8629328 0.5295646
-10    2L 2L:8629329-9588142 0.5113717
+> d %>% create_windows(1e6) %>% 
+        group_by(window) %>% 
+        summarize_window(xmean=mean(x))
+# A tibble: 124 × 3
+               window chrom     xmean
+               <fctr> <chr>     <dbl>
+1         2L:0-958813    2L 0.4964056
+2   2L:958814-1917627    2L 0.4932900
+3  2L:1917628-2876442    2L 0.5296287
+4  2L:2876443-3835256    2L 0.4607771
+5  2L:3835257-4794070    2L 0.5052921
+6  2L:4794071-5752885    2L 0.5090671
+7  2L:5752886-6711699    2L 0.4575886
+8  2L:6711700-7670514    2L 0.5106510
+9  2L:7670515-8629328    2L 0.4714383
+10 2L:8629329-9588142    2L 0.5210464
 # ... with 114 more rows
 ```
 
-**Note: there is some issue with group attributes** (e..g see the `?` above).
-This is a bug that needs to be fixed; `ungroup()` works for now. We can recover
-window boundaries with `separate_window()` and add a window center with
-`append_wcenter()`.
+`summarize_window()` is like dplyr's `summarize()` except (1) it will group by
+`window` if that column is present, and (2) it will carry window variables like
+`chrom` forward (and if `wstart` and `wend` are present, those too).
+
+Often, we need to refer to a window's start and end positions. We can extract
+these using `separate_window()`. Below, we demonstrate this
 
 ```{R}
-dr <- d %>% create_windows(1e6) %>% arrange(chrom) %>% 
-            group_by(chrom, window) %>% summarize(xmean=mean(x)) %>%
-            ungroup() %>%
-            separate_window() %>% append_wcenter()
+> dr <- d %>% create_windows(1e6) %>% 
+            group_by( window) %>% summarize(xmean=mean(x)) %>%
+            separate_window() 
+> dr
+Source: local data frame [124 x 4]
+Groups: chrom [6]
+
+    chrom  wstart    wend     xmean
+   <fctr>   <int>   <int>     <dbl>
+1      2L       0  958813 0.4964056
+2      2L  958814 1917627 0.4932900
+3      2L 1917628 2876442 0.5296287
+4      2L 2876443 3835256 0.4607771
+5      2L 3835257 4794070 0.5052921
+6      2L 4794071 5752885 0.5090671
+7      2L 5752886 6711699 0.4575886
+8      2L 6711700 7670514 0.5106510
+9      2L 7670515 8629328 0.4714383
+10     2L 8629329 9588142 0.5210464
+# ... with 114 more rows
+dr <- dr %>% mutate(wcenter=(wstart+wend)/2)
 ggplot(dr) + geom_point(aes(x=wcenter, y=xmean)) + facet_wrap(~chrom)
 ``` 
 
+This workflow is also encapsulated in the convenience function,
+`append_wcenter():
+
+
+```{R}
+> d %>% create_windows(1e6) %>% 
+        group_by(window) %>% 
+        summarize_window(xmean=mean(x)) %>%
+        append_wcenter()
+# A tibble: 124 × 6
+    chrom  wstart    wend             window     xmean   wcenter
+   <fctr>   <int>   <int>             <fctr>     <dbl>     <dbl>
+1      2L       0  958813        2L:0-958813 0.4964056  479406.5
+2      2L  958814 1917627  2L:958814-1917627 0.4932900 1438220.5
+3      2L 1917628 2876442 2L:1917628-2876442 0.5296287 2397035.0
+4      2L 2876443 3835256 2L:2876443-3835256 0.4607771 3355849.5
+5      2L 3835257 4794070 2L:3835257-4794070 0.5052921 4314663.5
+6      2L 4794071 5752885 2L:4794071-5752885 0.5090671 5273478.0
+7      2L 5752886 6711699 2L:5752886-6711699 0.4575886 6232292.5
+8      2L 6711700 7670514 2L:6711700-7670514 0.5106510 7191107.0
+9      2L 7670515 8629328 2L:7670515-8629328 0.4714383 8149921.5
+10     2L 8629329 9588142 2L:8629329-9588142 0.5210464 9108735.5
+# ... with 114 more rows
+```
+
 Or, if you want all chromosomes concatenated on a single x-axis, use
 `append_wcumpos()`.
-
 
 ```{R}
 dr <- d %>% create_windows(1e6) %>% arrange(chrom) %>% 

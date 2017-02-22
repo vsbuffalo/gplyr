@@ -1,10 +1,10 @@
 Package: gplyr
 Title: dplyr helper functions for working with genomic data
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R: 'Vince Buffalo <vsbuffaloAAAAA@gmail.com> [aut, cre]'
 Description: Some helper functions for manipulating genomic data in tibbles. For overlaps, etc. use Bioconductor's GenomicRanges.
 Depends: R (>= 3.3.2)
-Imports: dplyr, purrr, tidyr, GenomicRanges
+Imports: dplyr, purrr, tidyr, GenomicRanges, IRanges, lazyeval, tibble
 License: BSD
 Encoding: UTF-8
 LazyData: true

@@ -8,7 +8,7 @@ unite_window(.data, remove = TRUE)
 }
 \arguments{
 \item{.data}{Dataframe with columns \code{chrom}, \code{start}, and 
-\code{end}, (and \codes{windows} attribute).}
+\code{end}, (and \code{windows} attribute).}
 
 \item{remove}{If \code{TRUE}, remove columns \code{chrom}, \code{start}, 
 and \code{end}.}

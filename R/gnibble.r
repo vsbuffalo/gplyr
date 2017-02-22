@@ -14,6 +14,14 @@ gnibble <- function(..., chrom_lengths) {
   out
 }
 
+#' @export
+as_gnibble <- function (x, ...) {
+  UseMethod("as_gnibble")
+}
 
-
+#' @export
+as_gnibble.tbl_df <- function(x, ...) {
+  class(x) <- union('gnibble', class(x)) 
+  x
+}
 

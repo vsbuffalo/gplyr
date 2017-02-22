@@ -7,14 +7,10 @@
 create_windows(.data, width)
 }
 \arguments{
-\item{.data}{Dataframe with columns \code{chrom}, \code{start}, \code{end}}
-
-\item{width}{Width of window in base pairs.}
-
-\item{chrom_lengths}{Dataframe of chromosome names and lengths in columns
+\item{.data}{Dataframe with columns \code{chrom}, \code{start}, \code{end}
 \code{chrom} and \code{length}.}
 
-\item{chroms}{Optional vector of chromosome order.}
+\item{width}{Width of window in base pairs.}
 }
 \description{
 Simple strand-ignoring binning procedure for genomic ranges stored in a

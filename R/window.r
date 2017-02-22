@@ -1,6 +1,5 @@
 # window.r -- helper functions
 
-#' @export
 sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   chroms_i <- sample(seq_along(chrom_lengths$chrom), n, replace=TRUE)  
   chrom <- chrom_lengths$chrom[chroms_i]
@@ -13,7 +12,7 @@ sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
 #' Add Chromosome Lengths to Dataframe attributes
 #'
 #' @param .data Dataframe containing genomic range data.
-#' @param chrom_lengths Dataframe of chromosome lengths (with columns
+#' @param value Dataframe of chromosome lengths (with columns
 #' \code{chrom} and \code{length}.
 #'
 #' @export
@@ -43,23 +42,19 @@ chrom_lengths <- function(.data) {
 #' \code{end}. 
 #'
 #' @param .data Dataframe with columns \code{chrom}, \code{start}, \code{end}
-#' @param chrom_lengths Dataframe of chromosome names and lengths in columns
 #' \code{chrom} and \code{length}.
 #' @param width Width of window in base pairs.
-#' @param chroms Optional vector of chromosome order. 
 #'
 #' @export
 create_windows <- function(.data, width) {
   .data <- dplyr::arrange_(.data, 'chrom', 'start')
   chrom_lengths <- chrom_lengths(.data)
-  tiles <- unlist(GenomicRanges::tile(with(chrom_lengths, 
-                   GenomicRanges::GRanges(chrom, IRanges::IRanges(0, length))),
-                                      width=width))
+  tiles <- unlist(GenomicRanges::tile(GenomicRanges::GRanges(chrom_lengths$chrom,
+                  IRanges::IRanges(0, chrom_lengths$length)), width=width))
   windows <- gnibble(chrom=factor(as.vector(GenomicRanges::seqnames(tiles)),
                                  levels=chrom_lengths$chrom),
                    start=GenomicRanges::start(tiles),
                    end=GenomicRanges::end(tiles),
-                   width=end-start,
                    key=factor(sprintf("%s:%d-%s", chrom, start, end)))
   gr <- with(.data, GenomicRanges::GRanges(chrom, IRanges::IRanges(start, end)))
   # find overlaps (same order as original data tibble)
@@ -76,6 +71,9 @@ has_windows <- function(.data) {
   return('windows' %in% names(atts))
 }
 
+#' Get the Windows of a gnibble Object
+#'
+#' @param .data A gnibble dataframe.
 #' @export
 windows <- function(.data) {
   if (!has_windows(.data))
@@ -84,6 +82,10 @@ windows <- function(.data) {
   atts$windows
 }
 
+#' Set the Windows of a gnibble Object
+#' 
+#' @param .data A gnibble dataframe.
+#' @param value A gnibble of windows (with \code{chrom}, \code{start}, \code{end}).
 #' @export
 `windows<-` <- function(.data, value) {
   attr(.data, 'windows') <- value
@@ -93,7 +95,7 @@ windows <- function(.data) {
 #' Separate the Window Column into its Metadata columns \code{chrom},
 #' \code{start}, \code{end}
 #' 
-#' @param .data Dataframe with a column \code{window} (and \codes{windows}
+#' @param .data Dataframe with a column \code{window} (and \code{windows}
 #'        attribute). 
 #' @param remove If \code{TRUE}, remove columns \code{chrom}, \code{start}, 
 #'        and \code{end}.
@@ -120,6 +122,8 @@ separate_window <- function(.data, remove=TRUE) {
 
 #' @export
 append_wcenter <- function(.data, remove=TRUE) {
+  if (!all(c('wstart', 'wend') %in% colnames(data)))
+    .data <- separate_window(.data, FALSE)
   dplyr::mutate(.data, wcenter=(wstart+wend)/2)
 }
 
@@ -128,7 +132,7 @@ make_key <- function(chrom, start, end) sprintf("%s:%d-%s", chrom, start, end)
 #' Unite Window Columns into Single Window Key Column
 #' 
 #' @param .data Dataframe with columns \code{chrom}, \code{start}, and 
-#'        \code{end}, (and \codes{windows} attribute). 
+#'        \code{end}, (and \code{windows} attribute). 
 #' @param remove If \code{TRUE}, remove columns \code{chrom}, \code{start}, 
 #'        and \code{end}.
 #'
@@ -153,7 +157,33 @@ unite_window <- function(.data, remove=TRUE) {
 
 #' @export
 append_wcumpos <- function(.data) {
-   mutate(append_wcenter(.data), wcumpos=cumsum(wcenter))
+   mutate_(append_wcenter(.data), wcumpos="cumsum(wcenter)")
 }
 
+#' Summarize a Window
+#'
+#' This is the equivalent to \code{dplyr}'s \code{summarize()}, except that it
+#' carries forward relevant columns like \code{chrom}, \code{wstart},
+#' \code{wend}, etc.
+#'
+#' @param .data A gnibble with a \code{window} column.
+#' @export
+summarize_window <- function(.data, ...) {
+  if (all(c('wstart', 'wend') %in% colnames(.data))) {
+    return(dplyr::summarize_(group_by_(.data, 'window'),
+                     chrom='first(chrom)',
+                     wstart='unique(wstart)',
+                     wend='unique(wend)', .dots = lazyeval::lazy_dots(...)))
+  } else {
+    return(dplyr::summarize_(group_by_(.data, 'window'),
+                     chrom='first(chrom)', .dots = lazyeval::lazy_dots(...)))
+  }
+}
 
+#' Create Ranges from a Single SNP 'pos' Column
+#'
+#' @param .data A gnibble dataframe.
+#' @export
+pos2range <- function(.data) {
+  dplyr::select_(mutate_(.data, start='pos', end='pos'), '-pos')
+}

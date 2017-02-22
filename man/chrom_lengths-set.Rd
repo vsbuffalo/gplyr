@@ -9,7 +9,7 @@ chrom_lengths(.data) <- value
 \arguments{
 \item{.data}{Dataframe containing genomic range data.}
 
-\item{chrom_lengths}{Dataframe of chromosome lengths (with columns
+\item{value}{Dataframe of chromosome lengths (with columns
 \code{chrom} and \code{length}.}
 }
 \description{

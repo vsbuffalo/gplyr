@@ -8,7 +8,7 @@
 separate_window(.data, remove = TRUE)
 }
 \arguments{
-\item{.data}{Dataframe with a column \code{window} (and \codes{windows}
+\item{.data}{Dataframe with a column \code{window} (and \code{windows}
 attribute).}
 
 \item{remove}{If \code{TRUE}, remove columns \code{chrom}, \code{start}, 
