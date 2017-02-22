@@ -1,4 +1,10 @@
-## window.r -- helper functions
+# window.r -- helper functions
+
+# TODO delete
+dmel_lens <- tibble::tibble(chrom=c("2L", "X", "3L", "4", "2R", "3R"),
+                            length = c(23011544L, 22422827L, 24543557L, 
+                                       1351857L, 21146708L, 27905053L))
+
 
 sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   chroms_i <- sample(seq_along(chrom_lengths$chrom), n, replace=TRUE)  
@@ -6,13 +12,8 @@ sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   start <- sapply(chrom_lengths$length[chroms_i],
                 function(end) floor(runif(1, 1, end-max_len-1)))
   end <- start + floor(runif(n, 1, max_len))
-  out <- tibble::tibble(chrom, start=start, end=end)
-  attr(out, 'chrom_lengths') <- chrom_lengths
-  out
+  gnibble(chrom, start=start, end=end, chrom_lengths=chrom_lengths)
 }
-
-bin_start <- function(x) as.numeric(gsub("\\(([^,]+),([^]]+)]", "\\1", x))
-bin_end <- function(x) as.numeric(gsub("\\(([^,]+),([^]]+)]", "\\2", x))
 
 #' Add Chromosome Lengths to Dataframe attributes
 #'
@@ -38,7 +39,7 @@ chrom_lengths <- function(.data) {
   if (!has_chrom_lengths(.data)) stop("attribute 'chrom_lengths' is not set")
   attr(.data, 'chrom_lengths') 
 }
- 
+
 
 #' Bin a Dataframe of Genomic Ranges into Windows
 #'
@@ -59,8 +60,7 @@ create_windows <- function(.data, width) {
   tiles <- unlist(GenomicRanges::tile(with(chrom_lengths, 
                    GenomicRanges::GRanges(chrom, IRanges::IRanges(0, length))),
                                       width=width))
-  windows <- tibble::tibble(chrom=
-                            factor(as.vector(GenomicRanges::seqnames(tiles)),
+  windows <- gnibble(chrom=factor(as.vector(GenomicRanges::seqnames(tiles)),
                                  levels=chrom_lengths$chrom),
                    start=GenomicRanges::start(tiles),
                    end=GenomicRanges::end(tiles),
@@ -70,16 +70,29 @@ create_windows <- function(.data, width) {
   # find overlaps (same order as original data tibble)
   olaps <- GenomicRanges::findOverlaps(gr, tiles, select="first")
   .data$window <- factor(windows$key[olaps], levels=windows$key)
-  attr(.data, 'chrom_lengths') <- chrom_lengths
+  chrom_lengths(.data) <- chrom_lengths
+  class(.data) <- union('gnibble', class(.data))
   attr(.data, 'windows') <- windows
   .data
 }
 
-get_windows <- function(.data) {
+has_windows <- function(.data) {
   atts <- attributes(.data)
-  if (!('windows' %in% names(atts)))
+  return('windows' %in% names(atts))
+}
+
+#' @export
+windows <- function(.data) {
+  if (!has_windows(.data))
     stop("no 'windows' attribute found")
+  atts <- attributes(.data)
   atts$windows
+}
+
+#' @export
+`windows<-` <- function(.data, value) {
+  attr(.data, 'windows') <- value
+  .data
 }
 
 #' Separate the Window Column into its Metadata columns \code{chrom},
@@ -92,8 +105,7 @@ get_windows <- function(.data) {
 #
 #' @export
 separate_window <- function(.data, remove=TRUE) {
-  window_cols <- c('chrom', 'start', 'end')
-  windows <- get_windows(.data)
+  windows <- windows(.data)
   i <- match(.data$window, windows$key)
   out <- .data
   out$chrom <- factor(windows$chrom[i], levels=levels(windows$chrom))
@@ -105,7 +117,9 @@ separate_window <- function(.data, remove=TRUE) {
   if (remove)
     new_cols <- setdiff(new_cols, 'window')
   out <- out[, new_cols]
+  class(out) <- union('gnibble', class(.data))
   chrom_lengths(out) <- chrom_lengths(.data)
+  windows(out) <- windows(.data)
   return(out)
 }
 
@@ -124,10 +138,9 @@ make_key <- function(chrom, start, end) sprintf("%s:%d-%s", chrom, start, end)
 #'
 #' @export
 unite_window <- function(.data, remove=TRUE) {
-  windows <- get_windows(.data)
-  keys <- make_key(.data$chrom, .data$start, .data$end)
+  windows <- windows(.data)
+  keys <- make_key(.data$chrom, .data$wstart, .data$wend)
   if (!all(unique(keys) %in% windows$key)) {
-    browser()
     stop("some window keys are not in windows attributes dataframe!")
   }
   out <- .data
@@ -138,6 +151,7 @@ unite_window <- function(.data, remove=TRUE) {
     remove_cols <- c('chrom', 'start', 'end') 
   out <- out[, c('window', setdiff(colnames(out), remove_cols))]
   chrom_lengths(out) <- chrom_lengths(.data)
+  windows(out) <- windows(.data)
   return(out)
 }
 
