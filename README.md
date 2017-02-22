@@ -1,8 +1,9 @@
 # Experimental dplyr Extensions for Genomic Range Data
 
-These are some **experimental** (e.g. beware, things will change)
-functions that make working with genomic range data held in dataframes (or
-better, [tibbles](https://github.com/tidyverse/tibble)). If you need more more
+These are some **experimental** (e.g. beware, things will change... including
+this uncreative package name) functions that make working with genomic range
+data held in dataframes (or better,
+[tibbles](https://github.com/tidyverse/tibble)). If you need more more
 elaborate genomic range operations in R, you almost certainly want
 Bioconductor's
 [GenomicRanges](https://bioconductor.org/packages/release/bioc/html/GenomicRanges.html).
