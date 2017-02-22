@@ -17,15 +17,6 @@
 #   dplyr::group_by(.data, ..., add=add)
 # }
 
-#' @export
-arrange_.gnibble <- function(.data, ..., .dots) {
-  dots <- lazyeval::all_dots(.dots, ..., all_named = TRUE)
-  class(.data) <- setdiff(class(.data), 'gnibble')
-  out <- dplyr::arrange_(tbl_df(.data), .dots = dots)
-  class(out) <- union('gnibble', class(out))
-  out
-}
-
 # @export
 mutate_.gnibble <- function(.data, ..., .dots) {
   dots <- lazyeval::all_dots(.dots, ..., all_named = TRUE)

@@ -1,5 +1,6 @@
 # window.r -- helper functions
 
+#' @export
 sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   chroms_i <- sample(seq_along(chrom_lengths$chrom), n, replace=TRUE)  
   chrom <- chrom_lengths$chrom[chroms_i]
@@ -152,7 +153,7 @@ unite_window <- function(.data, remove=TRUE) {
 
 #' @export
 append_wcumpos <- function(.data) {
-  append_wcenter(.data) %>% mutate(wcumpos=cumsum(wcenter))
+   mutate(append_wcenter(.data), wcumpos=cumsum(wcenter))
 }
 
 
