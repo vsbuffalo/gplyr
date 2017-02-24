@@ -21,6 +21,19 @@ sim_ranges <- function(n, chrom_lengths, max_len=10e3) {
   .data
 }
 
+#' Set Chromosome Lengths of a gnibble in Place
+#'
+#' @param .data Dataframe containing genomic range data.
+#' @param value Dataframe of chromosome lengths (with columns
+#' \code{chrom} and \code{length}.
+#'
+#' @export
+set_chrom_lengths <- function(.data, value) {
+  chrom_lengths(.data) <- value
+  class(.data) <- union('gnibble', class(.data))
+  .data
+}
+
 has_chrom_lengths <- function(x) 'chrom_lengths' %in% names(attributes(x))
 
 
@@ -66,6 +79,7 @@ create_windows <- function(.data, width) {
   .data
 }
 
+#' @export
 has_windows <- function(.data) {
   atts <- attributes(.data)
   return('windows' %in% names(atts))

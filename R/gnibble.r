@@ -5,7 +5,7 @@
 #' @param ... Arguments passed to \code{tibble()}.
 #' @param  chrom_lengths Dataframe of chromosome lengths, with columns \code{chrom}, \code{lengths}.
 #'
-#' @export
+#' @export 
 gnibble <- function(..., chrom_lengths) {
   out <- tibble::tibble(...)
   class(out) <- union('gnibble', class(out))
